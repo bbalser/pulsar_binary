@@ -1,6 +1,6 @@
 import Config
 
-config :pulsar_protocol,
+config :pulsar_binary,
   divo: [
     {DivoPulsar, [port: 8080]}
   ]

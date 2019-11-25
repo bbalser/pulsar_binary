@@ -70,12 +70,17 @@ defmodule Pulsar.Binary.Connection do
   end
 
   defp do_handle(Commands.ping(), socket) do
-    Logger.info("PING PONG")
+    Logger.debug("#{__MODULE__}:(#{inspect(self())}) - Ping Pong")
 
     msg =
       Commands.pong([])
       |> Pulsar.Binary.simple()
 
     :ok = :gen_tcp.send(socket, msg)
+  end
+
+  defp do_handle(Commands.producer_success!(), socket) do
+    IO.inspect(command, label: "Command")
+    :ok
   end
 end

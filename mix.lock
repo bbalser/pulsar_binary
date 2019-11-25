@@ -1,0 +1,8 @@
+%{
+  "connection": {:hex, :connection, "1.0.4", "a1cae72211f0eef17705aaededacac3eb30e6625b04a6117c1b2db6ace7d5976", [:mix], [], "hexpm"},
+  "divo": {:hex, :divo, "1.1.9", "6f91b0a02bd97800eb9a99abd771b4c9b67d282b67abc223eb2832b93f557b7e", [:mix], [{:jason, "~> 1.1", [hex: :jason, repo: "hexpm", optional: false]}, {:patiently, "~> 0.2", [hex: :patiently, repo: "hexpm", optional: false]}], "hexpm"},
+  "divo_pulsar": {:hex, :divo_pulsar, "0.1.0", "5380501f9ed3f5deadf526de446fc30e5ed22b04e61ebd28a99f9ddaead8f8cc", [:mix], [{:divo, "~> 1.1.0", [hex: :divo, repo: "hexpm", optional: false]}], "hexpm"},
+  "jason": {:hex, :jason, "1.1.2", "b03dedea67a99223a2eaf9f1264ce37154564de899fd3d8b9a21b1a6fd64afe7", [:mix], [{:decimal, "~> 1.0", [hex: :decimal, repo: "hexpm", optional: true]}], "hexpm"},
+  "patiently": {:hex, :patiently, "0.2.0", "67eb139591e10c4b363ae0198e832552f191c58894731efd3bf124ec4722267a", [:mix], [], "hexpm"},
+  "protobuf": {:hex, :protobuf, "0.6.3", "742e9034c20532534ca96d7a7ee1251e0f2327dcf8ea6de0dd3eb3e054b236a7", [:mix], [], "hexpm"},
+}

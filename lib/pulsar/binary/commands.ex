@@ -17,14 +17,31 @@ defmodule Pulsar.Binary.Commands do
 
   Enum.each(mapping, fn {type_atom, id} ->
     name_atom = field_props[id].name_atom
+    capture_function = :"#{name_atom}!"
 
-    defmacro unquote(name_atom)() do
-      inner_name_atom = unquote(name_atom)
-      inner_type_atom = unquote(type_atom)
-      quote do
-        %Pulsar.Proto.BaseCommand{:type => unquote(inner_type_atom), unquote(inner_name_atom) => var!(command)}
+    [
+      defmacro unquote(name_atom)() do
+        inner_name_atom = unquote(name_atom)
+        inner_type_atom = unquote(type_atom)
+
+        quote do
+          %Pulsar.Proto.BaseCommand{
+            :type => unquote(inner_type_atom),
+            unquote(inner_name_atom) => _command
+          }
+        end
+      end,
+      defmacro unquote(capture_function)() do
+        inner_name_atom = unquote(name_atom)
+        inner_type_atom = unquote(type_atom)
+
+        quote do
+          %Pulsar.Proto.BaseCommand{
+            :type => unquote(inner_type_atom),
+            unquote(inner_name_atom) => var!(command)
+          }
+        end
       end
-    end
+    ]
   end)
-
 end

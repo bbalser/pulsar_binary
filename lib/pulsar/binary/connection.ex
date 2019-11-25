@@ -2,7 +2,7 @@ defmodule Pulsar.Binary.Connection do
   use Connection
   require Logger
 
-  alias Pulsar.Binary.Commands
+  require Pulsar.Binary.Commands, as: Commands
 
   def command(pid, command) do
     GenServer.call(pid, {:command, command})
@@ -13,19 +13,24 @@ defmodule Pulsar.Binary.Connection do
   end
 
   def init(opts) do
-    {:connect, nil, Map.new(opts)}
+    state = %{
+      host: Keyword.fetch!(opts, :host) |> to_charlist(),
+      port: Keyword.get(opts, :port, 6650),
+      request_id: 0
+    }
+
+    {:connect, nil, state}
   end
 
   def connect(_info, state) do
-    opts = [:binary, active: :once]
+    opts = [:binary, active: false]
 
-    case :gen_tcp.connect('localhost', 6650, opts) do
-      {:ok, socket} ->
-        pulsar_connect(socket)
-        {:ok, Map.put(state, :socket, socket)}
-
+    with {:ok, socket} <- :gen_tcp.connect(state.host, state.port, opts),
+         :ok <- pulsar_connect(socket) do
+      {:ok, Map.put(state, :socket, socket)}
+    else
       {:error, reason} ->
-        Logger.warn("TCP connection error: #{inspect(reason)}")
+        Logger.warn("Failed to establish connection to Pulsar: #{inspect(reason)}")
         {:backoff, 1000, state}
     end
   end
@@ -38,7 +43,7 @@ defmodule Pulsar.Binary.Connection do
   def handle_info({:tcp, socket, msg}, %{socket: socket} = state) do
     :inet.setopts(socket, active: :once)
 
-    Pulsar.Proto.BaseCommand.decode(msg)
+    Pulsar.Binary.decode(msg)
     |> do_handle(socket)
 
     {:noreply, state}
@@ -51,22 +56,25 @@ defmodule Pulsar.Binary.Connection do
 
   defp pulsar_connect(socket) do
     msg =
-      Commands.connect(protocol_version: 6, client_version: "balser")
+      Commands.connect(protocol_version: 6, client_version: "pulsar_binary 0.1")
       |> Pulsar.Binary.simple()
 
     :ok = :gen_tcp.send(socket, msg)
+
+    with {:ok, packet} <- :gen_tcp.recv(socket, 0),
+         Commands.connected() <- Pulsar.Binary.decode(packet) do
+      Logger.debug("#{__MODULE__}:(#{inspect(self())}) - Client is connected")
+      :inet.setopts(socket, active: :once)
+      :ok
+    end
   end
 
-  defp do_handle(%Pulsar.Proto.BaseCommand{type: :CONNECTED}, _socket) do
-    Logger.info("Connected")
-  end
-
-  defp do_handle(%Pulsar.Proto.BaseCommand{type: :PING}, socket) do
+  defp do_handle(Commands.ping(), socket) do
     Logger.info("PING PONG")
 
     msg =
-      Pulsar.Proto.CommandPong.new()
-      |> PulsarProtocol.SimpleCommand.encode()
+      Commands.pong([])
+      |> Pulsar.Binary.simple()
 
     :ok = :gen_tcp.send(socket, msg)
   end

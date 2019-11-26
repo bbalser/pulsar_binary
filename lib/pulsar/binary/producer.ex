@@ -5,10 +5,11 @@ defmodule Pulsar.Binary.Producer do
   require Pulsar.Binary.Commands, as: Commands
 
   def create(conn, topic) do
-    msg =
-       Commands.producer(topic: topic, producer_id: 1, request_id: 0, metadata: [])
-       |> Pulsar.Binary.simple()
+    producer_id = GenServer.call(conn, :next_producer_id)
 
-    Pulsar.Binary.Connection.command(conn, msg)
+    command =
+      Commands.producer(topic: topic, producer_id: producer_id, request_id: 0, metadata: [])
+
+    GenServer.call(conn, {:command, command})
   end
 end

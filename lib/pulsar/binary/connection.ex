@@ -97,33 +97,31 @@ defmodule Pulsar.Binary.Connection do
       |> Frame.simple()
 
     :ok = :gen_tcp.send(state.socket, msg)
+    state
   end
 
-  defp do_handle(Commands.producer_success(command), %{requests: requests} = state) do
+  defp do_handle(Commands.producer_success(command), state) do
     request_id = command.request_id
-    case Map.get(requests, request_id) do
-      nil ->
-        Logger.warn("#{__MODULE__}:(#{inspect(self())}) - Unable to find request for request_id #{request_id}")
-        state
-      pid ->
-        GenServer.reply(pid, command)
-        %{state | requests: Map.delete(requests, request_id)}
-    end
+    reply_to_request(state, request_id, command)
   end
 
-  defp do_handle(%Pulsar.Proto.CommandError{request_id: request_id} = command, %{requests: requests} = state) do
-    case Map.get(requests, request_id) do
-      nil ->
-        Logger.warn("#{__MODULE__}:(#{inspect(self())}) - Unable to find request for request_id #{request_id}")
-        state
-      pid ->
-        GenServer.reply(pid, command)
-        %{state | requests: Map.delete(requests, request_id)}
-    end
+  defp do_handle(%Pulsar.Proto.CommandError{request_id: request_id} = command, state) do
+    reply_to_request(state, request_id, command)
   end
 
   defp do_handle(command, state) do
     IO.inspect(command, label: "UNKNOWN command")
     state
+  end
+
+  defp reply_to_request(%{requests: requests} = state, request_id, response) do
+    case Map.get(requests, request_id) do
+      nil ->
+        Logger.warn("#{__MODULE__}:(#{inspect(self())}) - Unable to find request for request_id #{request_id}")
+        state
+      pid ->
+        GenServer.reply(pid, response)
+        %{state | requests: Map.delete(requests, request_id)}
+    end
   end
 end

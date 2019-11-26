@@ -1,10 +1,12 @@
 defmodule Pulsar.Binary.Connection.Message do
   alias Pulsar.Binary.Connection.State
+  require Logger
 
   def decode(message) do
     Pulsar.Proto.BaseCommand.decode(message)
   rescue
     e ->
+      Logger.warn("#{inspect(e)}")
       Pulsar.Proto.CommandError.decode(message)
   end
 
